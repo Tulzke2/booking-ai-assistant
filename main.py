@@ -4,11 +4,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from dotenv import load_dotenv
+from openai import OpenAI
 import os
-
-from google import genai
-from google.genai.errors import ClientError
-import time
 
 # -----------------------------
 # Настройка приложения
@@ -21,14 +18,17 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 # -----------------------------
-# Gemini API
+# OpenRouter API
 # -----------------------------
 
 load_dotenv()
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-client = genai.Client(api_key=GEMINI_API_KEY)
+client = OpenAI(
+    api_key=OPENROUTER_API_KEY,
+    base_url="https://openrouter.ai/api/v1",
+)
 
 # -----------------------------
 # Модель запроса
@@ -55,23 +55,21 @@ def home(request: Request):
 
 @app.post("/ask")
 def ask(data: AskRequest):
-    response = None
-    for _ in range(3):
-        try:
-            passport_status = (
-                "Паспорт получен"
-                if data.passport_received
-                else "Паспорт НЕ получен"
-            )
 
-            prompt = f"""
+    passport_status = (
+        "Паспорт получен"
+        if data.passport_received
+        else "Паспорт НЕ получен"
+    )
+
+    prompt = f"""
 Ты помощник сервиса бронирования.
 
 Статус паспорта:
-    {passport_status}
+{passport_status}
 
 Сообщение гостя:
-    {data.message}
+{data.message}
 
 Отвечай кратко и вежливо.
 
@@ -87,21 +85,24 @@ https://example.com/passport
 скажи, что паспорт принят и следующим шагом необходимо оплатить депозит.
 """
 
-            response = client.models.generate_content(
-                model="gemini-3.5-flash",
-                contents=prompt
-            )
+    try:
+        response = client.chat.completions.create(
+            model="deepseek/deepseek-chat",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.7,
+            max_tokens=300
+        )
 
-            return {
-                "answer": response.text
-            }
-
-        except ClientError as e:
-            return {
-            "answer": f"Ошибка Gemini API: {e}"
+        return {
+            "answer": response.choices[0].message.content
         }
 
-        except Exception as e:
-            return {
-                "answer": f"Неизвестная ошибка: {e}"
+    except Exception as e:
+        return {
+            "answer": f"Ошибка OpenRouter: {str(e)}"
         }
