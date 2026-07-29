@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Booking AI</title>
+</head>
+<body>
+
+<h1>Booking AI</h1>
+
+<h3>Статус паспорта</h3>
+
+<label>
+    <input type="radio" name="passport" value="received">
+    Получен
+</label>
+
+<label>
+    <input type="radio" name="passport" value="not_received" checked>
+    Не получен
+</label>
+
+<br><br>
+
+<label for="message">Сообщение гостя</label>
+<br>
+
+<textarea
+    id="message"
+    rows="6"
+    cols="60"
+    placeholder="Введите сообщение..."
+></textarea>
+
+<br><br>
+
+<button id="askButton">
+    Получить ответ ИИ
+</button>
+
+<h3>Ответ</h3>
+
+<div id="answer"></div>
+
+<script src="/static/script.js"></script>
+
+</body>
+</html>
